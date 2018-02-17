@@ -33,8 +33,11 @@ const (
 	// namespace is the kubernetes namespace in which portworx daemon set runs
 	namespace = "kube-system"
 
-	//provisionerName is the name for the driver provisioner
+	// provisionerName is the name for the driver provisioner
 	provisionerName = "kubernetes.io/portworx-volume"
+
+	// pxRackLabelKey Label for rack information
+	pxRackLabelKey = "px/rack"
 )
 
 type portworx struct {
@@ -154,6 +157,13 @@ func (p *portworx) GetNodes() ([]*storkvolume.NodeInfo, error) {
 		}
 		nodeInfo.IPs = append(nodeInfo.IPs, n.MgmtIp)
 		nodeInfo.IPs = append(nodeInfo.IPs, n.DataIp)
+
+		labels, err := k8s.Instance().GetLabelsOnNode(nodeInfo.Hostname)
+		if err == nil {
+			if rack, ok := labels[pxRackLabelKey]; ok {
+				nodeInfo.Rack = rack
+			}
+		}
 
 		nodes = append(nodes, nodeInfo)
 	}
